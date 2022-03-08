@@ -1,10 +1,22 @@
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const fs = require("fs");
 const port = process.env.PORT || 3000;
+
+let pages = [];
+
+const fileNames = fs.readdirSync('./public/');
+
+fileNames.forEach(function (fileName, index) {
+  pages.push(fileName.replace(/\.[^/.]+$/, ""));
+})
 
 module.exports = {
   mode: "development",
-  entry: './src/app.js',
+  entry: pages.reduce((config, page) => {
+    config[page] = `./src/${page}.js`;
+    return config;
+  }, {}),
   output: {
     filename: "[name].bundle.[fullhash].js"
   },
@@ -63,9 +75,16 @@ module.exports = {
       }
     }
   },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: "public/index.html",
-    })
-  ]
+  plugins: [].concat(
+      pages.map(
+          (page) =>
+            new HtmlWebpackPlugin({
+              inject: true,
+              template: `./public/${page}.html`,
+              filename: `${page}.html`,
+              chunks: [page]
+            })
+      ),
+      // other plugins
+  ),
 };
